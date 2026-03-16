@@ -54,8 +54,7 @@ const LOGO_MAP={
   "Alvarez & Marsal":"alvarezandmarsal.com","Huron Consulting":"huronconsultinggroup.com","Guidehouse":"guidehouse.com","Deloitte Consulting":"deloitte.com","EY-Parthenon":"ey.com","KPMG":"kpmg.com","Accenture Strategy":"accenture.com","Accenture":"accenture.com","FTI Consulting":"fticonsulting.com","McKinsey":"mckinsey.com",
   "Booz Allen Hamilton":"boozallen.com","West Monroe":"westmonroe.com","Slalom Consulting":"slalom.com","Cognizant":"cognizant.com","Capgemini Invent":"capgemini.com","Chartis Group":"chartis.com","IBM Consulting":"ibm.com","Infosys Consulting":"infosys.com",
   "Elevance Health":"elevancehealth.com","UHG / Optum":"unitedhealthgroup.com","Amazon":"amazon.com","NVIDIA":"nvidia.com","CVS Health":"cvshealth.com","Microsoft":"microsoft.com","Capital One":"capitalone.com","Cigna / Evernorth":"thecignagroup.com","Johnson & Johnson":"jnj.com","Google / Alphabet":"google.com",
-  "Various LMM PE":"selbyjennings.com","Certify Health":"certifyhealth.com","Deloitte Consulting":"deloitte.com",
-};
+  "Various LMM PE":"selbyjennings.com","Certify Health":"certifyhealth.com",};
 function logoUrl(co){const d=LOGO_MAP[co];return d?`https://logo.clearbit.com/${d}?size=80`:null}
 
 /* ═══════════════════════════════════════════════════════════════
