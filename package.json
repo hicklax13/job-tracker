@@ -1,0 +1,19 @@
+{
+  "name": "application-dashboard",
+  "productName": "Application Dashboard",
+  "version": "1.0.1",
+  "description": "72-role job application tracker desktop app",
+  "main": "main.js",
+  "scripts": {
+    "bundle": "esbuild src/renderer.js --bundle --outfile=dist/bundle.js --jsx=automatic --loader:.jsx=jsx",
+    "start": "npm run bundle && electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

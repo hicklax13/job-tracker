@@ -191,12 +191,12 @@ export default function App(){
   const [locPick,setLocPick]=useState(null);
   const tm=useRef(null);
 
-  useEffect(()=>{(async()=>{try{const r=await window.storage.get("hickey-v7");if(r?.value){const d=JSON.parse(r.value);if(d.length>=70)setApps(d)}}catch(e){}setLoaded(true)})()},[]);
-  const save=useCallback(async(d)=>{setApps(d);try{await window.storage.set("hickey-v7",JSON.stringify(d))}catch(e){}},[]);
+  useEffect(()=>{try{const r=localStorage.getItem("hickey-v7");if(r){const d=JSON.parse(r);if(d.length>=70)setApps(d)}}catch(e){}setLoaded(true)},[]);
+  const save=useCallback((d)=>{setApps(d);try{localStorage.setItem("hickey-v7",JSON.stringify(d))}catch(e){}},[]);
   const flash=msg=>{setToast(msg);clearTimeout(tm.current);tm.current=setTimeout(()=>setToast(null),2200)};
 
-  const upd=(id,u,skipLog)=>{setApps(prev=>{const next=prev.map(a=>{if(a.id!==id)return a;const up={...a,...u};if(!skipLog){up.log=[...(a.log||[]),{d:td(),a:u.status?`Status -> ${u.status}`:u.appliedLoc?`Loc: ${u.appliedLoc}`:"Touch",p:a.status}]}return up});try{window.storage.set("hickey-v7",JSON.stringify(next))}catch(e){}return next})};
-  const confirmApply=(id,loc)=>{setApps(prev=>{const a=prev.find(x=>x.id===id);const next=prev.map(x=>{if(x.id!==id)return x;return{...x,status:"Applied",appliedDate:td(),lastTouch:td(),appliedLoc:loc||x.loc,log:[...(x.log||[]),{d:td(),a:`Applied${loc?" - "+loc:""}`,p:x.status}]}});try{window.storage.set("hickey-v7",JSON.stringify(next))}catch(e){}flash(`${a.co} marked Applied${loc?" at "+loc:""}`);return next});setLocPick(null)};
+  const upd=(id,u,skipLog)=>{setApps(prev=>{const next=prev.map(a=>{if(a.id!==id)return a;const up={...a,...u};if(!skipLog){up.log=[...(a.log||[]),{d:td(),a:u.status?`Status -> ${u.status}`:u.appliedLoc?`Loc: ${u.appliedLoc}`:"Touch",p:a.status}]}return up});try{localStorage.setItem("hickey-v7",JSON.stringify(next))}catch(e){}return next})};
+  const confirmApply=(id,loc)=>{setApps(prev=>{const a=prev.find(x=>x.id===id);const next=prev.map(x=>{if(x.id!==id)return x;return{...x,status:"Applied",appliedDate:td(),lastTouch:td(),appliedLoc:loc||x.loc,log:[...(x.log||[]),{d:td(),a:`Applied${loc?" - "+loc:""}`,p:x.status}]}});try{localStorage.setItem("hickey-v7",JSON.stringify(next))}catch(e){}flash(`${a.co} marked Applied${loc?" at "+loc:""}`);return next});setLocPick(null)};
   const markApplied=id=>{const a=apps.find(x=>x.id===id);const locs=parseLocs(a.loc);locs.length>1?setLocPick({id,co:a.co,role:a.role,locs,cb:loc=>confirmApply(id,loc)}):confirmApply(id,a.loc)};
   const openTrack=a=>{if(a.link)window.open(a.link,"_blank");const locs=parseLocs(a.loc);locs.length>1?setLocPick({id:a.id,co:a.co,role:a.role,locs,cb:loc=>confirmApply(a.id,loc),hasSkip:true}):setToast({type:"confirm",id:a.id,co:a.co,loc:a.loc})};
   const adv=id=>{const a=apps.find(x=>x.id===id);const i=STATUS.indexOf(a.status);if(i<STATUS.length-3){const ns=STATUS[i+1];if(ns==="Applied"){markApplied(id);return}upd(id,{status:ns,lastTouch:td()});flash(`${a.co} -> ${ns}`)}};
@@ -204,7 +204,7 @@ export default function App(){
   const rej=id=>{upd(id,{status:"Rejected",lastTouch:td()});flash("Rejected")};
   const reset=()=>{if(confirm("Reset all 72 applications?")){save(ALL.map(a=>({...a,status:"Not Started",appliedDate:null,lastTouch:null,appliedLoc:null,log:[]})))}};
   const toggleSel=id=>{const n=new Set(sel);n.has(id)?n.delete(id):n.add(id);setSel(n)};
-  const batchAct=act=>{const ids=[...sel];setApps(prev=>{const next=prev.map(a=>{if(!ids.includes(a.id))return a;const u={lastTouch:td()};if(act==="applied"){u.status="Applied";if(!a.appliedDate)u.appliedDate=td()}else if(act==="rejected")u.status="Rejected";u.log=[...(a.log||[]),{d:td(),a:`Bulk ${act}`,p:a.status}];return{...a,...u}});try{window.storage.set("hickey-v7",JSON.stringify(next))}catch(e){}return next});setSel(new Set());flash(`${ids.length} updated`)};
+  const batchAct=act=>{const ids=[...sel];setApps(prev=>{const next=prev.map(a=>{if(!ids.includes(a.id))return a;const u={lastTouch:td()};if(act==="applied"){u.status="Applied";if(!a.appliedDate)u.appliedDate=td()}else if(act==="rejected")u.status="Rejected";u.log=[...(a.log||[]),{d:td(),a:`Bulk ${act}`,p:a.status}];return{...a,...u}});try{localStorage.setItem("hickey-v7",JSON.stringify(next))}catch(e){}return next});setSel(new Set());flash(`${ids.length} updated`)};
 
   const batches=["All",...Object.keys(BATCH_C)];
   const filtered=apps.filter(a=>(fB==="All"||a.batch===fB)&&(fS==="All"||a.status===fS)&&(!search||(a.co+a.role).toLowerCase().includes(search.toLowerCase()))).sort((a,b)=>sort==="urgency"?urg(b)-urg(a):sort==="score"?b.score-a.score:sort==="deadline"?((a.deadline||"9")<(b.deadline||"9")?-1:1):a.co.localeCompare(b.co));
