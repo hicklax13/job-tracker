@@ -195,8 +195,8 @@ export default function App(){
   const save=useCallback(async(d)=>{setApps(d);try{await window.storage.set("hickey-v7",JSON.stringify(d))}catch(e){}},[]);
   const flash=msg=>{setToast(msg);clearTimeout(tm.current);tm.current=setTimeout(()=>setToast(null),2200)};
 
-  const upd=(id,u)=>{save(apps.map(a=>{if(a.id!==id)return a;const up={...a,...u};up.log=[...(a.log||[]),{d:td(),a:u.status?`Status -> ${u.status}`:u.appliedLoc?`Loc: ${u.appliedLoc}`:"Touch",p:a.status}];return up}))};
-  const confirmApply=(id,loc)=>{const a=apps.find(x=>x.id===id);save(apps.map(x=>{if(x.id!==id)return x;return{...x,status:"Applied",appliedDate:td(),lastTouch:td(),appliedLoc:loc||x.loc,log:[...(x.log||[]),{d:td(),a:`Applied${loc?" - "+loc:""}`,p:x.status}]}}));setLocPick(null);flash(`${a.co} marked Applied${loc?" at "+loc:""}`)};
+  const upd=(id,u,skipLog)=>{setApps(prev=>{const next=prev.map(a=>{if(a.id!==id)return a;const up={...a,...u};if(!skipLog){up.log=[...(a.log||[]),{d:td(),a:u.status?`Status -> ${u.status}`:u.appliedLoc?`Loc: ${u.appliedLoc}`:"Touch",p:a.status}]}return up});try{window.storage.set("hickey-v7",JSON.stringify(next))}catch(e){}return next})};
+  const confirmApply=(id,loc)=>{setApps(prev=>{const a=prev.find(x=>x.id===id);const next=prev.map(x=>{if(x.id!==id)return x;return{...x,status:"Applied",appliedDate:td(),lastTouch:td(),appliedLoc:loc||x.loc,log:[...(x.log||[]),{d:td(),a:`Applied${loc?" - "+loc:""}`,p:x.status}]}});try{window.storage.set("hickey-v7",JSON.stringify(next))}catch(e){}flash(`${a.co} marked Applied${loc?" at "+loc:""}`);return next});setLocPick(null)};
   const markApplied=id=>{const a=apps.find(x=>x.id===id);const locs=parseLocs(a.loc);locs.length>1?setLocPick({id,co:a.co,role:a.role,locs,cb:loc=>confirmApply(id,loc)}):confirmApply(id,a.loc)};
   const openTrack=a=>{if(a.link)window.open(a.link,"_blank");const locs=parseLocs(a.loc);locs.length>1?setLocPick({id:a.id,co:a.co,role:a.role,locs,cb:loc=>confirmApply(a.id,loc),hasSkip:true}):setToast({type:"confirm",id:a.id,co:a.co,loc:a.loc})};
   const adv=id=>{const a=apps.find(x=>x.id===id);const i=STATUS.indexOf(a.status);if(i<STATUS.length-3){const ns=STATUS[i+1];if(ns==="Applied"){markApplied(id);return}upd(id,{status:ns,lastTouch:td()});flash(`${a.co} -> ${ns}`)}};
@@ -204,7 +204,7 @@ export default function App(){
   const rej=id=>{upd(id,{status:"Rejected",lastTouch:td()});flash("Rejected")};
   const reset=()=>{if(confirm("Reset all 72 applications?")){save(ALL.map(a=>({...a,status:"Not Started",appliedDate:null,lastTouch:null,appliedLoc:null,log:[]})))}};
   const toggleSel=id=>{const n=new Set(sel);n.has(id)?n.delete(id):n.add(id);setSel(n)};
-  const batchAct=act=>{const ids=[...sel];save(apps.map(a=>{if(!ids.includes(a.id))return a;const u={lastTouch:td()};if(act==="applied"){u.status="Applied";if(!a.appliedDate)u.appliedDate=td()}else if(act==="rejected")u.status="Rejected";u.log=[...(a.log||[]),{d:td(),a:`Bulk ${act}`,p:a.status}];return{...a,...u}}));setSel(new Set());flash(`${ids.length} updated`)};
+  const batchAct=act=>{const ids=[...sel];setApps(prev=>{const next=prev.map(a=>{if(!ids.includes(a.id))return a;const u={lastTouch:td()};if(act==="applied"){u.status="Applied";if(!a.appliedDate)u.appliedDate=td()}else if(act==="rejected")u.status="Rejected";u.log=[...(a.log||[]),{d:td(),a:`Bulk ${act}`,p:a.status}];return{...a,...u}});try{window.storage.set("hickey-v7",JSON.stringify(next))}catch(e){}return next});setSel(new Set());flash(`${ids.length} updated`)};
 
   const batches=["All",...Object.keys(BATCH_C)];
   const filtered=apps.filter(a=>(fB==="All"||a.batch===fB)&&(fS==="All"||a.status===fS)&&(!search||(a.co+a.role).toLowerCase().includes(search.toLowerCase()))).sort((a,b)=>sort==="urgency"?urg(b)-urg(a):sort==="score"?b.score-a.score:sort==="deadline"?((a.deadline||"9")<(b.deadline||"9")?-1:1):a.co.localeCompare(b.co));
@@ -230,7 +230,7 @@ export default function App(){
   const Btn=({children,onClick,primary,danger,ghost,small})=>{
     const base={fontSize:small?10:11,fontWeight:600,padding:small?"4px 10px":"6px 16px",borderRadius:6,cursor:"pointer",border:"none",fontFamily:'"Outfit",sans-serif',transition:"all 0.15s",letterSpacing:"0.01em"};
     const theme=primary?{background:C.navy,color:"#fff"}:danger?{background:C.redBg,color:C.red,border:`1px solid rgba(192,57,43,0.12)`}:ghost?{background:"transparent",color:C.tx3,border:`1px solid ${C.bd}`}:{background:C.bg3,color:C.tx2,border:`1px solid ${C.bd}`};
-    return <button onClick={onClick} style={{...base,...theme}} onMouseEnter={e=>{if(primary){e.target.style.background=C.navyLight}else{e.target.style.borderColor=C.navy;e.target.style.color=C.navy}}} onMouseLeave={e=>{if(primary){e.target.style.background=C.navy}else{e.target.style.borderColor=theme.border?C.bd:"";e.target.style.color=theme.color}}}>{children}</button>};
+    return <button onClick={onClick} style={{...base,...theme}} onMouseEnter={e=>{if(primary){e.currentTarget.style.background=C.navyLight}else{e.currentTarget.style.borderColor=C.navy;e.currentTarget.style.color=C.navy}}} onMouseLeave={e=>{if(primary){e.currentTarget.style.background=C.navy}else{e.currentTarget.style.borderColor=theme.border?C.bd:"";e.currentTarget.style.color=theme.color}}}>{children}</button>};
 
   const DeadlineTag=({a})=>{
     const dl=daysUntil(a.deadline);
@@ -315,7 +315,7 @@ export default function App(){
           {a.appliedDate&&<span style={{fontSize:10,color:C.violet,fontFamily:'"JetBrains Mono",monospace'}}>Applied {fmtDFull(a.appliedDate)}</span>}
           {a.lastTouch&&<span style={{fontSize:10,color:C.tx4,fontFamily:'"JetBrains Mono",monospace'}}>Last touch {daysSince(a.lastTouch)}d ago</span>}
         </div>
-        <textarea value={a.notes} onChange={e=>upd(a.id,{notes:e.target.value})} rows={2} style={{width:"100%",fontSize:11,padding:"8px 12px",borderRadius:6,background:C.bg0,border:`1px solid ${C.bd}`,color:C.tx2,fontFamily:'"Outfit",sans-serif',outline:"none",resize:"vertical"}}/>
+        <textarea value={a.notes} onChange={e=>upd(a.id,{notes:e.target.value},true)} rows={2} style={{width:"100%",fontSize:11,padding:"8px 12px",borderRadius:6,background:C.bg0,border:`1px solid ${C.bd}`,color:C.tx2,fontFamily:'"Outfit",sans-serif',outline:"none",resize:"vertical"}}/>
         {a.log?.length>0&&<div style={{marginTop:10}}>
           <span style={{fontSize:9,fontWeight:700,color:C.tx4,textTransform:"uppercase",letterSpacing:"0.06em"}}>Activity</span>
           <div style={{marginTop:4,maxHeight:100,overflowY:"auto"}}>
@@ -382,14 +382,14 @@ export default function App(){
     </div>}
 
     {/* Header */}
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 24px 14px",borderBottom:"none",background:"#1A6B4A"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 24px 14px",borderBottom:"none",background:C.navy}}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
         <div style={{width:10,height:10,borderRadius:"50%",background:"#fff",boxShadow:"0 0 0 3px rgba(255,255,255,0.2)"}}/>
         <span style={{fontSize:18,fontWeight:800,letterSpacing:"-0.03em",color:"#fff"}}>Job Tracker</span>
         <span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontFamily:'"JetBrains Mono",monospace',marginLeft:4}}>72 roles / 7 verticals</span>
       </div>
       <div style={{display:"flex",gap:2,background:"rgba(255,255,255,0.12)",borderRadius:8,padding:3,border:"1px solid rgba(255,255,255,0.15)"}}>
-        {["dashboard","pipeline","kanban"].map(v=><button key={v} onClick={()=>setView(v)} style={{padding:"8px 20px",borderRadius:6,fontSize:11,fontWeight:view===v?700:500,cursor:"pointer",border:"none",background:view===v?C.navy:"transparent",color:view===v?"#fff":view===v?"#fff":"rgba(255,255,255,0.7)",transition:"all 0.12s",fontFamily:'"Outfit",sans-serif',letterSpacing:"0.01em"}}>{v.charAt(0).toUpperCase()+v.slice(1)}</button>)}
+        {["dashboard","pipeline","kanban"].map(v=><button key={v} onClick={()=>setView(v)} style={{padding:"8px 20px",borderRadius:6,fontSize:11,fontWeight:view===v?700:500,cursor:"pointer",border:"none",background:view===v?C.navy:"transparent",color:view===v?"#fff":"rgba(255,255,255,0.7)",transition:"all 0.12s",fontFamily:'"Outfit",sans-serif',letterSpacing:"0.01em"}}>{v.charAt(0).toUpperCase()+v.slice(1)}</button>)}
       </div>
     </div>
 
