@@ -1,7 +1,11 @@
 const { app, BrowserWindow, shell } = require("electron");
 const path = require("path");
 
-const isDev = !app.isPackaged;
+const fs = require("fs");
+
+// Dev mode only when ELECTRON_DEV is set AND dist doesn't exist
+const distPath = path.join(__dirname, "dist", "index.html");
+const isDev = process.env.ELECTRON_DEV === "1" && !fs.existsSync(distPath);
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -27,7 +31,7 @@ function createWindow() {
   if (isDev) {
     win.loadURL("http://localhost:5173");
   } else {
-    win.loadFile(path.join(__dirname, "dist", "index.html"));
+    win.loadFile(distPath);
   }
 }
 

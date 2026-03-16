@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "start": "electron .",
-    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && ELECTRON_DEV=1 electron .\"",
     "dist": "vite build && electron-builder",
     "dist:mac": "vite build && electron-builder --mac",
     "dist:win": "vite build && electron-builder --win",
@@ -36,9 +36,6 @@
     "linux": {
       "target": "AppImage"
     }
-  },
-  "dependencies": {
-    "electron-store": "^8.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
