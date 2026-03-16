@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build bundle
+        run: npm run bundle
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.1
+          name: Application Dashboard v1.0.1
+          body: |
+            Initial Electron desktop release of the 72-role job application tracker.
+
+            ## Changes
+            - Converted from Claude artifact to standalone Electron desktop app
+            - Persistent storage via localStorage (replaces artifact storage API)
+            - esbuild bundling for React JSX
+            - GitHub Actions CI pipeline
+
+            ## How to run
+            ```bash
+            npm install
+            npm start
+            ```
+          generate_release_notes: false
