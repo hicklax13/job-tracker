@@ -2,36 +2,60 @@
 
 ## What This Project Is
 
-A **72-role job application tracker** built as a single-file React artifact for Claude.ai. Created by Connor Hickey (Georgetown MSF 2026), it tracks applications across **7 industry verticals**: Federal Intelligence, AI Companies, PE/Private Debt, Investment Banking, Management Consulting, Tech Consulting, and Fortune 500.
+A **72-role job application tracker** built as an Electron desktop app with React. Created by Connor Hickey (Georgetown MSF 2026), it tracks applications across **7 industry verticals**: Federal Intelligence, AI Companies, PE/Private Debt, Investment Banking, Management Consulting, Tech Consulting, and Fortune 500.
 
-The entire application lives in `App.jsx` (466 lines). It runs inside the Claude.ai artifact runtime — not as a standalone web app. There is no build process, no `package.json`, and no external dependencies beyond React (provided by the runtime), Google Fonts, and the Clearbit logo API.
+The core UI lives in `src/App.jsx`. The app uses Vite for bundling and Electron for the desktop shell. The original version was a Claude.ai artifact; it has been converted to a standalone desktop application.
 
 ## Architecture
 
-- **Single-file monolith**: `App.jsx` contains all components, data, styles, and logic
-- **State**: `useState` hooks with persistence via `window.storage` (Claude artifact API, key: `hickey-v7`)
-- **Styling**: Inline styles with a design token system (`C` object for colors, `BATCH_C` for vertical colors)
-- **Fonts**: Outfit (UI) + JetBrains Mono (data/scores)
+- **Renderer**: `src/App.jsx` — single-file React component with all UI, data, styles, and logic
+- **Main process**: `main.js` — Electron window management, external link handling
+- **Preload**: `preload.js` — context bridge (exposes platform info)
+- **Bundler**: Vite + `@vitejs/plugin-react`
+- **Packaging**: electron-builder (outputs to `release/`)
+- **Storage**: `localStorage` for persistent state (key: `hickey-v7`)
+- **Styling**: Inline styles with design token system (`C` object for colors, `BATCH_C` for vertical colors)
+- **Fonts**: Google Fonts — Outfit (UI) + JetBrains Mono (data/scores)
 - **Logos**: Clearbit API with fallback avatar
 
-## Key Features
+## Scripts
 
-- **3 views**: Dashboard (urgency cards + deadline alerts), Pipeline (search/sort/filter/bulk actions), Kanban (4-column board)
-- **8 KPI metrics**: Total, Active, Applied, Interviews, Overdue, Offers, Warm, Rejected
-- **9-state workflow**: Not Started → Researching → Networking → Applied → Screen → Interview → Offer/Rejected/Withdrawn
-- **Urgency algorithm**: 0-10 score based on status + days since last touch
-- **Location picker**: Auto-triggers for multi-location roles (e.g., "San Francisco / New York")
-- **Activity log**: Timestamped history per application
-- **Bulk actions**: Select all, bulk apply, bulk touch, bulk reject
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server (renderer only) |
+| `npm run electron:dev` | Start Vite + Electron together for development |
+| `npm start` | Launch Electron (requires `npm run build` first) |
+| `npm run build` | Build renderer with Vite |
+| `npm run dist` | Build + package for current platform |
+| `npm run dist:mac` | Build + package macOS DMG |
+| `npm run dist:win` | Build + package Windows NSIS installer |
+| `npm run dist:linux` | Build + package Linux AppImage |
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `App.jsx` | Entire application (components, data, styles, logic) |
-| `README.md` | Project overview and feature list |
-| `CLAUDE.md` | This file — developer guide and debug log |
-| `.gitignore` | Standard ignores (node_modules, .env, dist, build) |
+| `src/App.jsx` | Entire React application (components, data, styles, logic) |
+| `src/main.jsx` | React DOM entry point |
+| `main.js` | Electron main process |
+| `preload.js` | Electron preload script |
+| `index.html` | HTML shell |
+| `vite.config.js` | Vite configuration |
+| `package.json` | Dependencies, scripts, electron-builder config |
+| `App.jsx` | Original Claude.ai artifact version (preserved for reference) |
+| `README.md` | Project overview |
+| `CLAUDE.md` | This file — developer guide and changelog |
+
+## Key Features
+
+- **3 views**: Dashboard (urgency cards + deadline alerts), Pipeline (search/sort/filter/bulk actions), Kanban (4-column board)
+- **8 KPI metrics**: Total, Active, Applied, Interviews, Overdue, Offers, Warm, Rejected
+- **9-state workflow**: Not Started -> Researching -> Networking -> Applied -> Screen -> Interview -> Offer/Rejected/Withdrawn
+- **Urgency algorithm**: 0-10 score based on status + days since last touch
+- **Location picker**: Auto-triggers for multi-location roles
+- **Activity log**: Timestamped history per application
+- **Bulk actions**: Select all, bulk apply, bulk touch, bulk reject
+- **External links**: Job posting links open in default browser (not Electron window)
 
 ## Data Model
 
@@ -39,37 +63,22 @@ Each of the 72 applications has:
 - **Static fields**: `id`, `co` (company), `role`, `batch` (vertical), `score` (35-75), `warm`, `link`, `loc`, `sal`, `posted`, `deadline`, `notes`
 - **Mutable fields** (added at runtime): `status`, `appliedDate`, `lastTouch`, `appliedLoc`, `log[]`
 
-## Bugs Found and Fixed
+## Changelog
 
-### 1. Notes textarea polluted activity log (Critical)
-**File**: `App.jsx` — `upd()` function and notes `<textarea>`
-**Problem**: The `upd()` function always appended to the activity log. Since the notes textarea called `upd(id, {notes: value})` on every keystroke, this created hundreds of "Touch" log entries while typing.
-**Fix**: Added a `skipLog` parameter to `upd()`. Notes textarea now passes `skipLog=true`.
+### v1.0.0 — Electron Desktop App + Bug Fixes
 
-### 2. Stale closure in state updates (Critical)
-**File**: `App.jsx` — `upd()`, `confirmApply()`, `batchAct()`
-**Problem**: These functions captured `apps` from the closure and called `save(apps.map(...))`. If multiple updates fired in the same React render cycle (e.g., rapid clicks), earlier updates were silently lost because `apps` was stale.
-**Fix**: Converted `upd()`, `confirmApply()`, and `batchAct()` to use `setApps(prev => ...)` functional updates, ensuring each update operates on the latest state.
+**Electron conversion:**
+- Converted from Claude.ai artifact to standalone Electron desktop app
+- Added Vite + React build pipeline
+- Replaced `window.storage` (Claude artifact API) with `localStorage`
+- External links now open in default browser via Electron `shell.openExternal`
+- Added electron-builder packaging for macOS, Windows, and Linux
+- Moved React source to `src/App.jsx`, created `src/main.jsx` entry point
 
-### 3. Redundant ternary in view tab color (Minor)
-**File**: `App.jsx` — header view tabs (line ~392)
-**Problem**: `color: view===v ? "#fff" : view===v ? "#fff" : "rgba(255,255,255,0.7)"` — the second `view===v` check was unreachable dead code (copy-paste error).
-**Fix**: Simplified to `color: view===v ? "#fff" : "rgba(255,255,255,0.7)"`.
-
-### 4. Btn hover used `e.target` instead of `e.currentTarget` (Medium)
-**File**: `App.jsx` — `Btn` component
-**Problem**: `onMouseEnter`/`onMouseLeave` used `e.target`, which refers to the innermost element that triggered the event. If the button had child elements, hover styles would apply to children instead of the button itself, causing visual glitches.
-**Fix**: Changed all `e.target.style` to `e.currentTarget.style` in the Btn component.
-
-### 5. Header color mismatch (Minor)
-**File**: `App.jsx` — header `<div>`
-**Problem**: Header background was hardcoded to `#1A6B4A` (green), inconsistent with the navy (`#1B2541`) design token system used everywhere else.
-**Fix**: Changed to `C.navy` to use the design token.
-
-## Development Notes
-
-- To run: paste `App.jsx` contents into a Claude.ai React artifact
-- Storage key is `hickey-v7` — changing this resets all user progress
-- The `ALL` array (lines 64-137) contains all 72 static role definitions
-- `LOGO_MAP` (lines 49-58) maps company names to domains for Clearbit logos
-- No tests exist — this is a single-artifact app with no test infrastructure
+**Bugs fixed:**
+1. **Notes textarea polluted activity log** (Critical) — Every keystroke added a "Touch" log entry. Added `skipLog` parameter to `upd()`.
+2. **Stale closure in state updates** (Critical) — `upd()`, `confirmApply()`, `batchAct()` used stale `apps` closure. Converted to functional `setApps(prev => ...)`.
+3. **Redundant ternary in view tab color** (Minor) — Dead code from copy-paste error. Simplified.
+4. **Btn hover used `e.target` instead of `e.currentTarget`** (Medium) — Hover styles misapplied to child elements.
+5. **Header color mismatch** (Minor) — Hardcoded green `#1A6B4A` changed to `C.navy` design token.
+6. **Duplicate key in LOGO_MAP** (Minor) — "Deloitte Consulting" appeared twice. Removed duplicate.

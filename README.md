@@ -1,6 +1,25 @@
 # Job Tracker
 
-72-role application tracker across 7 industry verticals built as a React artifact for Claude.ai.
+72-role application tracker across 7 industry verticals, built as an Electron desktop app with React.
+
+## Quick Start
+
+```bash
+npm install
+npm run electron:dev
+```
+
+## Build & Package
+
+```bash
+# Build for current platform
+npm run dist
+
+# Platform-specific
+npm run dist:mac      # macOS DMG
+npm run dist:win      # Windows NSIS installer
+npm run dist:linux    # Linux AppImage
+```
 
 ## Features
 
@@ -11,7 +30,7 @@
 - **Posted + Deadline tracking**: Relative timestamps, color-coded countdown pills, deadline alerts on dashboard
 - **Score system**: 100-point composite per role with visual score bars
 - **Activity log**: Timestamped history of all status changes per role
-- **Persistent storage**: State saved via Claude.ai artifact storage (key: hickey-v7)
+- **Persistent storage**: State saved via localStorage (key: hickey-v7)
 - **Bulk actions**: Select all, bulk apply, bulk touch, bulk reject
 
 ## Verticals
@@ -26,14 +45,14 @@
 
 ## Tech Stack
 
-- React (JSX, hooks, useCallback, useRef)
+- Electron + Vite + React
 - Outfit + JetBrains Mono fonts
 - Clearbit logo API
-- Claude.ai persistent artifact storage
+- electron-builder for packaging
 
-## Usage
+## Claude.ai Artifact
 
-Paste `App.jsx` into a Claude.ai React artifact to run. Designed for the Claude.ai artifact runtime, not standalone deployment.
+The original single-file artifact version is preserved in `App.jsx` (root). Paste it into a Claude.ai React artifact to run in-browser.
 
 ## Author
 
